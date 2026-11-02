@@ -1,0 +1,6 @@
+{
+  "name": "Shubhbandhan Matrimonial Platform",
+  "description": "Premium Indian matrimonial platform demo with public portal, member dashboard, and admin management system.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -106,10 +106,13 @@ export const HomePage: React.FC = () => {
                   <div className="absolute -inset-2 rounded-3xl bg-gradient-to-tr from-[#D4AF37]/50 via-[#8B1D2C]/20 to-transparent blur-md" />
                   <div className="relative rounded-2xl overflow-hidden shadow-2xl border-2 border-[#D4AF37]/60 aspect-[4/3] lg:aspect-[5/4] bg-[#2E1018]">
                     <img
-                      src={websiteContent.hero.bannerImageUrl}
+                      src={websiteContent.hero.bannerImageUrl || '/images/hero_wedding.jpg'}
                       alt="Sacred Indian Wedding Ceremony"
                       referrerPolicy="no-referrer"
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1200&q=80';
+                      }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                     <div className="absolute bottom-4 left-4 right-4 text-white p-3 rounded-xl bg-black/40 backdrop-blur-md border border-white/20">
@@ -210,10 +213,13 @@ export const HomePage: React.FC = () => {
             <div className="lg:col-span-5">
               <div className="rounded-2xl overflow-hidden border-2 border-[#D4AF37]/50 shadow-xl aspect-[4/3] bg-[#2E1018]">
                 <img
-                  src={websiteContent.about.imageUrl}
+                  src={websiteContent.about.imageUrl || '/images/about_ceremony.jpg'}
                   alt="Traditional Indian Vivah Ceremony"
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.src = 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1000&q=80';
+                  }}
                 />
               </div>
             </div>
@@ -340,10 +346,13 @@ export const HomePage: React.FC = () => {
                   >
                     <div className="sm:w-5/12 aspect-[4/3] sm:aspect-auto bg-[#2E1018]">
                       <img
-                        src={story.photoUrl}
+                        src={story.photoUrl || '/images/couple_1.jpg'}
                         alt={story.coupleNames}
                         referrerPolicy="no-referrer"
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=800&q=80';
+                        }}
                       />
                     </div>
                     <div className="sm:w-7/12 p-6 flex flex-col justify-between space-y-3">

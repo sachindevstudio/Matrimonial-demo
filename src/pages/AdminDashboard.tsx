@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import {
@@ -37,6 +37,7 @@ import {
   Check,
   AlertCircle,
   Save,
+  QrCode,
 } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
@@ -101,6 +102,13 @@ export const AdminDashboard: React.FC = () => {
   // Website Content Form State
   const [editableContent, setEditableContent] = useState(websiteContent);
 
+  const qrFileInputRef = useRef<HTMLInputElement>(null);
+  const heroFileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setEditableContent(websiteContent);
+  }, [websiteContent]);
+
   if (!currentUser || currentUser.type !== 'admin') {
     return (
       <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-4">
@@ -164,9 +172,71 @@ export const AdminDashboard: React.FC = () => {
     return true;
   });
 
+  const handleQrUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select a valid image file (PNG, JPG, or SVG)', 'error');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (uploadEvent) => {
+      const dataUrl = uploadEvent.target?.result as string;
+      const updated = {
+        ...editableContent,
+        paymentQR: {
+          ...editableContent.paymentQR,
+          qrImageUrl: dataUrl,
+        },
+      };
+      setEditableContent(updated);
+      updateWebsiteContent(updated);
+      showToast('Company UPI QR code successfully uploaded! Live in all payment windows.', 'success');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleResetQrToSample = () => {
+    const updated = {
+      ...editableContent,
+      paymentQR: {
+        ...editableContent.paymentQR,
+        qrImageUrl: '/images/sample_qr.jpg',
+      },
+    };
+    setEditableContent(updated);
+    updateWebsiteContent(updated);
+    showToast('Reset to default sample UPI QR code', 'info');
+  };
+
+  const handleHeroBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select a valid image file', 'error');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (uploadEvent) => {
+      const dataUrl = uploadEvent.target?.result as string;
+      const updated = {
+        ...editableContent,
+        hero: {
+          ...editableContent.hero,
+          bannerImageUrl: dataUrl,
+        },
+      };
+      setEditableContent(updated);
+      updateWebsiteContent(updated);
+      showToast('Homepage hero image uploaded and updated!', 'success');
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSaveWebsiteContent = (e: React.FormEvent) => {
     e.preventDefault();
     updateWebsiteContent(editableContent);
+    showToast('Website content changes saved successfully!', 'success');
   };
 
   return (
@@ -888,11 +958,60 @@ export const AdminDashboard: React.FC = () => {
 
               <button
                 onClick={() => setIsAddingPlan(true)}
-                className="px-4 py-2 text-xs font-semibold bg-[#8B1D2C] text-white rounded-lg hover:bg-[#721522] shadow flex items-center gap-1.5 shrink-0"
+                className="px-4 py-2 text-xs font-semibold bg-[#8B1D2C] text-white rounded-lg hover:bg-[#721522] shadow flex items-center gap-1.5 shrink-0 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Membership Tier</span>
               </button>
+            </div>
+
+            {/* Official Company Payment QR Quick Status & Upload Box */}
+            <div className="bg-[#FFFDF9] p-5 rounded-2xl border border-[#D4AF37]/50 shadow-sm flex flex-col md:flex-row items-center justify-between gap-5">
+              <div className="flex items-center gap-4 w-full md:w-auto">
+                <div className="w-16 h-16 rounded-xl bg-white border-2 border-[#D4AF37]/50 p-1 shrink-0 flex items-center justify-center shadow-xs">
+                  <img
+                    src={editableContent.paymentQR.qrImageUrl || '/images/sample_qr.jpg'}
+                    alt="Active Plan QR"
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-contain"
+                    onError={(e) => {
+                      e.currentTarget.src = '/images/sample_qr.jpg';
+                    }}
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-brand font-bold text-sm text-[#8B1D2C]">
+                      Active Company UPI QR Code for Plan Payments
+                    </span>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                      Live on Checkout
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-700 mt-1">
+                    VPA / UPI ID: <strong className="font-mono text-[#8B1D2C]">{editableContent.paymentQR.upiId}</strong> ({editableContent.paymentQR.merchantName})
+                  </div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">
+                    When candidates click "Choose Plan", this exact QR code and UPI ID are presented for payment.
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5 shrink-0 w-full md:w-auto justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('content');
+                    setTimeout(() => {
+                      qrFileInputRef.current?.scrollIntoView({ behavior: 'smooth' });
+                    }, 100);
+                  }}
+                  className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#8B1D2C] text-white hover:bg-[#721522] shadow transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Upload / Change Company QR</span>
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1207,72 +1326,195 @@ export const AdminDashboard: React.FC = () => {
                     />
                   </div>
                 </div>
+                {/* Hero Banner Image Uploader */}
+                <div className="pt-2 border-t border-[#E8DEC8]">
+                  <label className="block font-semibold text-slate-800 mb-1.5">
+                    Hero Section Visual Banner
+                  </label>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                    <input
+                      ref={heroFileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleHeroBannerUpload}
+                      className="hidden"
+                      id="hero-banner-upload-input"
+                    />
+                    <div className="w-16 h-12 rounded-lg overflow-hidden border border-[#D4AF37]/40 bg-black shrink-0">
+                      <img
+                        src={editableContent.hero.bannerImageUrl || '/images/hero_wedding.jpg'}
+                        alt="Hero preview"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80';
+                        }}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => heroFileInputRef.current?.click()}
+                        className="px-3.5 py-1.5 text-xs font-semibold bg-[#8B1D2C] text-white rounded-lg hover:bg-[#721522] shadow flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>Upload Banner Photo</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = {
+                            ...editableContent,
+                            hero: {
+                              ...editableContent.hero,
+                              bannerImageUrl: '/images/hero_wedding.jpg',
+                            },
+                          };
+                          setEditableContent(updated);
+                          updateWebsiteContent(updated);
+                          showToast('Reset hero banner to default wedding photo', 'info');
+                        }}
+                        className="px-2.5 py-1.5 text-xs text-[#7A6B6A] hover:text-[#8B1D2C] rounded-lg border border-[#E8DEC8]"
+                      >
+                        Reset Default
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* C. QR Code Management */}
-            <div className="bg-[#FFFDF9] p-6 rounded-2xl border border-[#E8DEC8] shadow-sm space-y-4">
-              <h3 className="font-brand font-bold text-base text-[#8B1D2C] border-b border-[#E8DEC8] pb-2">
-                3. UPI QR Code & Payment Configuration
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs items-center">
-                <div className="space-y-3">
-                  <div>
-                    <label className="block font-semibold text-slate-800 mb-1">Merchant UPI VPA ID *</label>
+            {/* C. Company Official UPI QR Code Uploader */}
+            <div className="bg-[#FFFDF9] p-6 rounded-2xl border border-[#D4AF37]/50 shadow-sm space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E8DEC8] pb-3">
+                <div>
+                  <h3 className="font-brand font-bold text-base text-[#8B1D2C] flex items-center gap-2">
+                    <QrCode className="w-5 h-5 text-[#D4AF37]" />
+                    <span>3. Official Company UPI QR Code & Payment Setup</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Upload your company's official UPI QR code. The uploaded QR is immediately activated in all membership plan payment screens for candidate checkout.
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-semibold shrink-0">
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Live on Payment Modal</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-xs items-start">
+                {/* Upload & Merchant controls */}
+                <div className="lg:col-span-7 space-y-4">
+                  {/* File Upload Dropzone / Button */}
+                  <div className="p-5 rounded-2xl border-2 border-dashed border-[#D4AF37]/60 bg-[#FAF7F2] hover:bg-white transition-colors text-center">
                     <input
-                      type="text"
-                      value={editableContent.paymentQR.upiId}
-                      onChange={(e) =>
-                        setEditableContent({
-                          ...editableContent,
-                          paymentQR: { ...editableContent.paymentQR, upiId: e.target.value },
-                        })
-                      }
-                      className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-[#E8DEC8] bg-white text-slate-900"
+                      ref={qrFileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleQrUpload}
+                      className="hidden"
+                      id="company-qr-upload-input"
                     />
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-12 h-12 rounded-full bg-[#8B1D2C]/10 text-[#8B1D2C] flex items-center justify-center">
+                        <Upload className="w-6 h-6" />
+                      </div>
+                      <div className="font-semibold text-slate-900 text-sm">
+                        Upload Your Company's UPI QR Code
+                      </div>
+                      <p className="text-[11px] text-slate-500 max-w-sm">
+                        Click below or select your business UPI QR code (Google Pay, PhonePe, Paytm, or BHIM). No manual path typing needed!
+                      </p>
+                      <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
+                        <button
+                          type="button"
+                          onClick={() => qrFileInputRef.current?.click()}
+                          className="px-4 py-2 bg-[#8B1D2C] text-white font-semibold rounded-lg hover:bg-[#721522] shadow transition-colors flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Upload className="w-4 h-4" />
+                          <span>Select QR Image File</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleResetQrToSample}
+                          className="px-3 py-2 text-[#7A6B6A] hover:text-[#8B1D2C] hover:bg-black/5 rounded-lg border border-[#E8DEC8] transition-colors flex items-center gap-1 cursor-pointer"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>Reset to Default QR</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block font-semibold text-slate-800 mb-1">Official Merchant Name *</label>
-                    <input
-                      type="text"
-                      value={editableContent.paymentQR.merchantName}
-                      onChange={(e) =>
-                        setEditableContent({
-                          ...editableContent,
-                          paymentQR: { ...editableContent.paymentQR, merchantName: e.target.value },
-                        })
-                      }
-                      className="w-full px-3 py-2 text-xs rounded-lg border border-[#E8DEC8] bg-white text-slate-900"
-                    />
-                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-semibold text-slate-800 mb-1">Company UPI VPA ID *</label>
+                      <input
+                        type="text"
+                        value={editableContent.paymentQR.upiId}
+                        onChange={(e) =>
+                          setEditableContent({
+                            ...editableContent,
+                            paymentQR: { ...editableContent.paymentQR, upiId: e.target.value },
+                          })
+                        }
+                        placeholder="e.g. shubhbandhan@upi"
+                        className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-[#E8DEC8] bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-[#8B1D2C]"
+                      />
+                      <span className="text-[10px] text-slate-500 mt-1 block">Candidates can copy this to pay via any UPI app</span>
+                    </div>
 
-                  <div>
-                    <label className="block font-semibold text-slate-800 mb-1">QR Code Image Path / URL</label>
-                    <input
-                      type="text"
-                      value={editableContent.paymentQR.qrImageUrl}
-                      onChange={(e) =>
-                        setEditableContent({
-                          ...editableContent,
-                          paymentQR: { ...editableContent.paymentQR, qrImageUrl: e.target.value },
-                        })
-                      }
-                      className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-[#E8DEC8] bg-white text-slate-900"
-                    />
+                    <div>
+                      <label className="block font-semibold text-slate-800 mb-1">Official Merchant Business Name *</label>
+                      <input
+                        type="text"
+                        value={editableContent.paymentQR.merchantName}
+                        onChange={(e) =>
+                          setEditableContent({
+                            ...editableContent,
+                            paymentQR: { ...editableContent.paymentQR, merchantName: e.target.value },
+                          })
+                        }
+                        placeholder="e.g. Shubhbandhan Matrimony Private Limited"
+                        className="w-full px-3 py-2 text-xs rounded-lg border border-[#E8DEC8] bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-[#8B1D2C]"
+                      />
+                      <span className="text-[10px] text-slate-500 mt-1 block">Verified name displayed to user during payment</span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="bg-[#FAF5EE] p-4 rounded-xl border border-[#E8DEC8] text-center flex flex-col items-center">
-                  <div className="text-[11px] font-semibold text-[#8B1D2C] mb-2 uppercase">Live QR Preview</div>
-                  <img
-                    src={editableContent.paymentQR.qrImageUrl}
-                    alt="QR Preview"
-                    className="w-36 h-36 object-contain rounded border border-[#E8DEC8] bg-white p-2"
-                  />
-                  <span className="text-[10px] text-slate-500 mt-2 font-mono">
-                    {editableContent.paymentQR.upiId}
-                  </span>
+                {/* Live Preview Box */}
+                <div className="lg:col-span-5 bg-[#FAF5EE] p-5 rounded-2xl border border-[#D4AF37]/40 text-center flex flex-col items-center justify-between">
+                  <div>
+                    <div className="text-[11px] font-bold text-[#8B1D2C] uppercase tracking-wider mb-1 flex items-center justify-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
+                      <span>Live Checkout Preview</span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 mb-3">
+                      This QR code is shown when members click "Choose Plan"
+                    </p>
+                  </div>
+
+                  <div className="w-48 h-48 rounded-xl overflow-hidden border-2 border-[#D4AF37]/50 bg-white p-2.5 shadow-md flex items-center justify-center">
+                    <img
+                      src={editableContent.paymentQR.qrImageUrl || '/images/sample_qr.jpg'}
+                      alt="Active Company QR"
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        e.currentTarget.src = '/images/sample_qr.jpg';
+                      }}
+                    />
+                  </div>
+
+                  <div className="mt-3 w-full bg-white p-2.5 rounded-xl border border-[#E8DEC8] text-center">
+                    <div className="text-[10px] text-[#7A6B6A]">Payable UPI ID</div>
+                    <div className="font-mono font-bold text-xs text-[#8B1D2C] mt-0.5 truncate">
+                      {editableContent.paymentQR.upiId}
+                    </div>
+                    <div className="text-[10px] text-slate-600 truncate mt-0.5">
+                      {editableContent.paymentQR.merchantName}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

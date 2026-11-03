@@ -87,75 +87,73 @@ interface AppContextType {
   isUnlockedForCurrentMember: () => boolean;
 }
 
-const STORAGE_KEY = 'shubhbandhan_matrimony_state_v1';
+const STORAGE_KEY = 'shubhbandhan_matrimony_state_v2';
+const LEGACY_STORAGE_KEY = 'shubhbandhan_matrimony_state_v1';
+
+// Helper to auto-migrate legacy dev paths (/src/assets/images/...) to production /images/...
+const migrateLegacyPaths = (raw: string | null): any => {
+  if (!raw) return null;
+  const cleaned = raw
+    .replaceAll('/src/assets/images/hero_matrimonial_wedding_1793631902405.jpg', '/images/hero_wedding.jpg')
+    .replaceAll('/src/assets/images/about_heritage_ceremony_1793631903833.jpg', '/images/about_ceremony.jpg')
+    .replaceAll('/src/assets/images/sample_upi_qr_1793631903888.jpg', '/images/sample_qr.jpg')
+    .replaceAll('/src/assets/images/success_story_couple_1_1793631902422.jpg', '/images/couple_1.jpg')
+    .replaceAll('/src/assets/images/success_story_couple_2_1793631903134.jpg', '/images/couple_2.jpg')
+    .replaceAll('/src/assets/images/', '/images/');
+  return JSON.parse(cleaned);
+};
+
+const getStoredItem = (subKey: string): any => {
+  try {
+    const v2 = localStorage.getItem(STORAGE_KEY + subKey);
+    if (v2) return migrateLegacyPaths(v2);
+    const v1 = localStorage.getItem(LEGACY_STORAGE_KEY + subKey);
+    if (v1) return migrateLegacyPaths(v1);
+    return null;
+  } catch {
+    return null;
+  }
+};
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Load state or use initial seed
   const [websiteContent, setWebsiteContent] = useState<WebsiteContent>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY + '_content');
-      return saved ? JSON.parse(saved) : INITIAL_WEBSITE_CONTENT;
-    } catch {
-      return INITIAL_WEBSITE_CONTENT;
-    }
+    const stored = getStoredItem('_content');
+    return stored ? stored : INITIAL_WEBSITE_CONTENT;
   });
 
   const [profiles, setProfiles] = useState<MatrimonialProfile[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY + '_profiles');
-      return saved ? JSON.parse(saved) : INITIAL_PROFILES;
-    } catch {
-      return INITIAL_PROFILES;
-    }
+    const stored = getStoredItem('_profiles');
+    return stored ? stored : INITIAL_PROFILES;
   });
 
   const [plans, setPlans] = useState<MembershipPlan[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY + '_plans');
-      return saved ? JSON.parse(saved) : INITIAL_PLANS;
-    } catch {
-      return INITIAL_PLANS;
-    }
+    const stored = getStoredItem('_plans');
+    return stored ? stored : INITIAL_PLANS;
   });
 
   const [communities] = useState<CommunityOption[]>(INITIAL_COMMUNITIES);
 
   const [successStories, setSuccessStories] = useState<SuccessStory[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY + '_stories');
-      return saved ? JSON.parse(saved) : INITIAL_SUCCESS_STORIES;
-    } catch {
-      return INITIAL_SUCCESS_STORIES;
-    }
+    const stored = getStoredItem('_stories');
+    return stored ? stored : INITIAL_SUCCESS_STORIES;
   });
 
   const [members, setMembers] = useState<Member[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY + '_members');
-      return saved ? JSON.parse(saved) : INITIAL_MEMBERS;
-    } catch {
-      return INITIAL_MEMBERS;
-    }
+    const stored = getStoredItem('_members');
+    return stored ? stored : INITIAL_MEMBERS;
   });
 
   const [paymentRequests, setPaymentRequests] = useState<PaymentRequest[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY + '_payments');
-      return saved ? JSON.parse(saved) : INITIAL_PAYMENT_REQUESTS;
-    } catch {
-      return INITIAL_PAYMENT_REQUESTS;
-    }
+    const stored = getStoredItem('_payments');
+    return stored ? stored : INITIAL_PAYMENT_REQUESTS;
   });
 
   const [currentUser, setCurrentUser] = useState<CurrentUser>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY + '_user');
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
+    const stored = getStoredItem('_user');
+    return stored ? stored : null;
   });
 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);

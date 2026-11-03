@@ -50,7 +50,7 @@ export const QrPaymentModal: React.FC<QrPaymentModalProps> = ({ plan, onClose, o
 
   const handleUseDemoSample = () => {
     setTransactionId(`UPI${Math.floor(10000000000 + Math.random() * 90000000000)}`);
-    setScreenshotUrl('/src/assets/images/sample_upi_qr_1793631903888.jpg');
+    setScreenshotUrl('/images/sample_qr.jpg');
     setError(null);
     showToast('Loaded realistic sample UTR and receipt screenshot', 'info');
   };
@@ -67,7 +67,7 @@ export const QrPaymentModal: React.FC<QrPaymentModalProps> = ({ plan, onClose, o
       return;
     }
 
-    const proof = screenshotUrl || '/src/assets/images/sample_upi_qr_1793631903888.jpg';
+    const proof = screenshotUrl || '/images/sample_qr.jpg';
 
     const success = submitPaymentRequest({
       memberId: currentUser.member.id,
@@ -140,10 +140,13 @@ export const QrPaymentModal: React.FC<QrPaymentModalProps> = ({ plan, onClose, o
 
               <div className="w-48 h-48 rounded-lg overflow-hidden border border-[#E8DEC8] bg-[#FAF5EE] p-2 flex items-center justify-center">
                 <img
-                  src={websiteContent.paymentQR.qrImageUrl}
+                  src={websiteContent.paymentQR.qrImageUrl || '/images/sample_qr.jpg'}
                   alt="UPI QR Code"
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-contain"
+                  onError={(e) => {
+                    e.currentTarget.src = '/images/sample_qr.jpg';
+                  }}
                 />
               </div>
 
